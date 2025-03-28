@@ -840,11 +840,7 @@ class RuleProcessor(object):
 
     def get_from_index(self, index, user_key):
         """Parse user key and try to retrieve user from provided index"""
-        try:
-            _, username, _, email = self.parse_user_key(user_key)
-        except ValueError:
-            self.logger.critical("Invalid user_key: {}".format(user_key))
-            raise ValueError("Check user's email and username in the source directory!")
+        _, username, _, email = self.parse_user_key(user_key)
         return index.get(email=email, username=username)
 
     def update_umapi_user(self, umapi_info, user_key, attributes_to_update=None, groups_to_add=None,
@@ -1146,9 +1142,17 @@ class RuleProcessor(object):
         """
         Returns the identity_type, username, and domain for the user.
         The domain part is empty except if the username is not an email address.
-        :rtype: tuple
+        Sample of user_key:
+          when username is email format:        federatedID,email@domain.com,,email@domain.com
+          when username is not in email format: federatedID,non_email_value,domain.com,some@domain.com
+        :rtype: list
         """
-        return user_key.split(',')
+        u_key = user_key.split(',')
+        if len(u_key) == 4:
+           return u_key
+        else:
+            self.logger.critical('Invalid user key: {}'.format(u_key))
+            raise ValueError('Invalid user key: {}'.format(u_key))
 
     def get_username_from_user_key(self, user_key):
         return self.parse_user_key(user_key)[1]
